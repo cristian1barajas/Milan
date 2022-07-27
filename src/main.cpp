@@ -1,6 +1,15 @@
 #include <Arduino.h>
 
-//MILAN
+/*
+ * File:   main.cpp
+ * Author: Ing. Christian Barajas
+ * 
+ * Programa especifico para el control de acceso con una conexión a base de
+ * datos mediante shield ethernet. 
+ * 
+ * BotLAB co
+ * Created on 27 de julio de 2022, 03:39 PM
+ */
 
 #include <SPI.h>
 #include <Ethernet.h>
