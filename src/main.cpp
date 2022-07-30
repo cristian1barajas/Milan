@@ -1,5 +1,3 @@
-#include <Arduino.h>
-
 /*
  * File:   main.cpp
  * Author: Ing. Christian Barajas
@@ -14,20 +12,20 @@
 #include <SPI.h>
 #include <Ethernet.h>
 
-// **** Constantes salidas digitales **** //
+// ** Constantes salidas digitales ** //
 #define ledVerde 2
 #define ledRojo 14
-#define releOK 4
-#define releBAD 3
+#define releOK 3
+#define releBAD 2
 
-// **** Variables de configuración de la tarjeta Ethernet **** //
+// ** Variables de configuración de la tarjeta Ethernet ** //
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
-byte ipServer[] = {192, 168, 100, 199};
+byte ipServer[] = {192, 168, 1, 90};
 int portRemote = 80;
-byte ipLocal[] = {192, 168, 100, 200};
+byte ipLocal[] = {192, 168, 1, 91};
 
 String texto1 = "GET /api/v1/registrovisitas/visitantes/validarAcceso?codigoBuscar=";
-String texto2 = "&estacion=P-01&lugar=5";
+String texto2 = "&estacion=P-03&lugar=5";
 String lectura = "";
 
 bool leyoCedula = false, enviaCedula = false;
@@ -35,7 +33,7 @@ bool habMon = true;
 int reintento;
 int conParpadeo;
 
-// **** Objeto Ethernet **** //
+// ** Objeto Ethernet ** //
 EthernetClient client;
 String tresUltimas;
 
@@ -52,11 +50,12 @@ void setup()
 
   digitalWrite(ledVerde, LOW);
   digitalWrite(ledRojo, LOW);
-  digitalWrite(releOK, LOW);
-  digitalWrite(releBAD, LOW);
+  digitalWrite(releOK, HIGH);
+  digitalWrite(releBAD, HIGH);
 
   Ethernet.begin(mac, ipLocal); // start the Ethernet connection:
   delay(1000);                  // Esperar 1 seg para que la Ethernet shield inicie
+
   if (Ethernet.hardwareStatus() != EthernetW5500)
   {
     if (habMon)
@@ -89,7 +88,7 @@ void setup()
   }
 
   if (habMon) Serial.println("Ok Cable!");
-  digitalWrite(ledVerde, HIGH);
+  //digitalWrite(ledVerde, HIGH);
   digitalWrite(ledRojo, LOW);
 
   if (habMon)
@@ -110,9 +109,11 @@ void loop()
     }
 
     digitalWrite(ledRojo, HIGH);
-    if (client.connect(ipServer, portRemote)) {  // Conexion con el servidor
+    if (client.connect(ipServer, 9081)) 
+    {  // Conexion con el servidor
         digitalWrite(ledRojo, LOW);
-        client.println(texto1 + lectura + texto2 + "&id=" + ipLocal[3] + " HTTP/1.0");
+        //client.println(texto1 + lectura + texto2 + "&id=" + ipLocal[3] + " HTTP/1.0");
+        client.println(texto1 + lectura + texto2 + " HTTP/1.0");
         client.println("User-Agent: Escaner 1.0");
         client.println();
         if (habMon)Serial.println("Respuesta:");
@@ -126,21 +127,28 @@ void loop()
         }
         //client.stop();
         //client.flush();
-        tresUltimas = tresUltimas.substring((tresUltimas.length()-3));
+        tresUltimas = tresUltimas.substring(11, 15);
         //tresUltimas = tresUltimas.substring(0,3);
         if (habMon) Serial.println(tresUltimas);
 
-        if (tresUltimas == "OK"){
+        if (tresUltimas == "0000" && lectura[21] == 'S')
+        {
           if (habMon)Serial.println("¡Abre!");
-          digitalWrite(releOK, HIGH);
-          delay(500);
           digitalWrite(releOK, LOW);
-
-        }else{
-          if (habMon)Serial.println("¡No abre!");
-          digitalWrite(releBAD, HIGH);
-          delay(500);
+          delay(1000);
+          digitalWrite(releOK, HIGH);
+        }
+         if (tresUltimas == "0000" && lectura[21] == 'E')
+        {
+          if (habMon)Serial.println("¡Abre!");
           digitalWrite(releBAD, LOW);
+          delay(1000);
+          digitalWrite(releBAD, HIGH);
+        }
+        else
+        {
+          if (habMon)Serial.println("¡No abre!");
+         
         }
         leyoCedula = false;
         lectura = "";
@@ -168,8 +176,8 @@ void loop()
     enviaCedula = true;
     reintento = 3;
     // Serial.println(texto1 + lectura + texto2);
-    digitalWrite(ledVerde, LOW);
-    delay(100);
-    digitalWrite(ledVerde, HIGH);
+    // digitalWrite(ledVerde, LOW);
+    // delay(100);
+    // digitalWrite(ledVerde, HIGH);
   }
 }
